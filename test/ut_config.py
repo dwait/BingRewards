@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #
 # developed by Sergey Markelov (2013)
@@ -10,7 +10,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "pkg"))
 
-from config import AccountKey, BingRewardsReportItem, Config, ConfigError
+from config import AccountKey, Config, ConfigError
 
 class UTConfig(unittest.TestCase):
     def setUp(self):
@@ -24,11 +24,11 @@ class UTConfig(unittest.TestCase):
         betweenAccountsSalt="40.52" />
 
     <accounts>
-        <account type="Facebook" disabled="false">
+        <account type="Live" disabled="false">
             <login>john.smith@gmail.com</login>
             <password>xxx</password>
         </account>
-        <account type="Facebook" disabled="true">
+        <account type="Live" disabled="true">
             <login>google@shmoogle.com</login>
             <password>yyy</password>
         </account>
@@ -57,7 +57,7 @@ class UTConfig(unittest.TestCase):
             <notify if="%p ne 16" cmd="./log.sh complete %a %p %r %P %l %i" />
             <notify if="%P gt 475" cmd="./log.sh complete %a %p %r %P %l %i" />
 
-            <account ref="Facebook_john.smith@gmail.com">
+            <account ref="Live_john.smith@gmail.com">
                 <retry if="%p lt 31" interval="5" salt="3.5" count="3" />
                 <notify if="%l gt 10000" cmd="./log.sh complete %a %p %r %P %l %i" />
                 <notify if="%p ne 31" cmd="./log.sh complete %a %p %r %P %l %i" />
@@ -85,14 +85,14 @@ class UTConfig(unittest.TestCase):
         acc = Config.Account()
         acc.accountLogin = "john.smith@gmail.com"
         acc.password = "xxx"
-        acc.accountType = "Facebook"
+        acc.accountType = "Live"
         acc.disabled = False
         accounts[acc.getRef()] = acc
 
         acc = Config.Account()
         acc.accountLogin = "google@shmoogle.com"
         acc.password = "yyy"
-        acc.accountType = "Facebook"
+        acc.accountType = "Live"
         acc.disabled = True
         accounts[acc.getRef()] = acc
 
@@ -147,7 +147,7 @@ class UTConfig(unittest.TestCase):
     def test_event_getEvent_returnsOverriddenEventIfExists(self):
         acc = AccountKey()
         acc.accountLogin = "john.smith@gmail.com"
-        acc.accountType = "Facebook"
+        acc.accountType = "Live"
 
         event = self.config.getEvent(Config.Event.onComplete, acc)
         self.assertIsNotNone(event)
@@ -158,7 +158,7 @@ class UTConfig(unittest.TestCase):
         self.assertEqual(event.retry.salt, 3.5)
         self.assertEqual(event.retry.count, 3)
 
-        self.assertEquals(len(event.notifies), 3)
+        self.assertEqual(len(event.notifies), 3)
         notify = event.notifies[2]
         self.assertIsNotNone(notify.ifStatement)
         self.assertEqual(notify.ifStatement.rhs, 475)

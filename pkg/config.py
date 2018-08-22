@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 #
 # developed by Sergey Markelov (2013)
 #
@@ -79,6 +77,8 @@ class Config:
 
         def __eq__(self, other):
             return self.__dict__ == other.__dict__
+
+        __hash__ = None
 
     class Event:
         """"Data model representing config.xml event"""

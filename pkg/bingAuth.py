@@ -3,11 +3,11 @@
 #
 
 import random
-import urllib
-import urllib2
 import re
 import time
 import json
+
+from six.moves import urllib
 
 import bingCommon
 import helpers
@@ -26,10 +26,10 @@ class BingAuth:
 
     def __init__(self, httpHeaders, opener):
         """
-        @param opener is an instance of urllib2.OpenerDirector
+        @param opener is an instance of urllib.request.OpenerDirector
         """
-        if opener is None or not isinstance(opener, urllib2.OpenerDirector):
-            raise TypeError("opener is not an instance of urllib2.OpenerDirector")
+        if opener is None or not isinstance(opener, urllib.request.OpenerDirector):
+            raise TypeError("opener is not an instance of urllib.request.OpenerDirector")
 
         self.opener = opener
         self.httpHeaders = httpHeaders
@@ -50,17 +50,17 @@ class BingAuth:
         throws urllib2.URLError if failed to reach the server
         """
         # request http://www.bing.com
-        request = urllib2.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
+        request = urllib.request.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
         with self.opener.open(request) as response:
             page = helpers.getResponseBody(response)
 
         # get connection URL for provider Live
         urlSearch = self.winLiveId.search(page)
-        if urlSearch == None:
+        if urlSearch is None:
             raise AuthenticationError("Could not find variable 'WindowsLiveId' on Live login page")
-        url = urlSearch.group(1).decode("unicode_escape")
+        url = urlSearch.group(1).encode("ascii").decode("unicode_escape")
 
-        request = urllib2.Request(url = url, headers = self.httpHeaders)
+        request = urllib.request.Request(url = url, headers = self.httpHeaders)
         request.add_header("Referer", bingCommon.BING_URL)
         with self.opener.open(request) as response:
             referer = response.geturl()
@@ -68,26 +68,27 @@ class BingAuth:
 
         # get PPFT parameter
         PPFTSearch = self.ppftValue.search(page)
-        if PPFTSearch == None:
+        if PPFTSearch is None:
             raise AuthenticationError("Could not find variable 'PPFT' on Live login page")
-        PPFT = PPFTSearch.group(1)
+        PPFT = PPFTSearch.group(1).encode("ascii")
 
         # get PPSX parameter
         ppsxSearch = self.ppsxValue.search(page)
-        if ppsxSearch == None:
+        if ppsxSearch is None:
             raise AuthenticationError("Could not find PassportRN variable on Live login page")
-        PPSX = ppsxSearch.group(1)
+        PPSX = ppsxSearch.group(1).encode("ascii")
 
         # generate ClientLoginTime
         clt = 20000 + int(random.uniform(0, 1000))
+        bclt = str(clt).encode("ascii")
 
         # get url to post data to
         urlSearch = self.urlPostValue.search(page)
-        if urlSearch == None:
+        if urlSearch is None:
             raise AuthenticationError("Could not find variable 'urlPost' on Live login page")
         url = urlSearch.group(1)
 
-        timestamp = int(round(time.time() * 1000))
+        timestamp = int(time.time() * 1000)
         # TODO: randomize times a bit?
         i16 = json.dumps({
             "navigationStart": timestamp,
@@ -111,31 +112,34 @@ class BingAuth:
             "domComplete": timestamp + 422,
             "loadEventStart": timestamp + 422,
             "loadEventEnd": 0
-        })
+        }, ensure_ascii=True).encode("ascii")
 
-        postFields = urllib.urlencode({
-            "loginfmt"      : login,
-            "login"         : login,
-            "passwd"        : password,
-            "type"          : "11",
-            "PPFT"          : PPFT,
-            "PPSX"          : str(PPSX),
-            "LoginOptions"  : "3",
-            "FoundMSAs"     : "",
-            "fspost"        : "0",
-            "NewUser"       : "1",
-            "i2"            : "1",                  # ClientMode
-            "i13"           : "0",                  # ClientUsedKMSI
-            "i16"           : i16,
-            "i19"           : str(clt),             # ClientLoginTime
-            "i21"           : "0",
-            "i22"           : "0",
-            "i17"           : "0",                  # SRSFailed
-            "i18"           : "__DefaultLogin_Strings|1,__DefaultLogin_Core|1," # SRSSuccess
-        })
+        blogin = login.encode("utf-8")
+        bpassword = password.encode("utf-8")
+
+        postFields = urllib.parse.urlencode({
+            b"loginfmt"      : blogin,
+            b"login"         : blogin,
+            b"passwd"        : bpassword,
+            b"type"          : b"11",
+            b"PPFT"          : PPFT,
+            b"PPSX"          : PPSX,
+            b"LoginOptions"  : b"3",
+            b"FoundMSAs"     : b"",
+            b"fspost"        : b"0",
+            b"NewUser"       : b"1",
+            b"i2"            : b"1", # ClientMode
+            b"i13"           : b"0", # ClientUsedKMSI
+            b"i16"           : i16,
+            b"i19"           : bclt, # ClientLoginTime
+            b"i21"           : b"0",
+            b"i22"           : b"0",
+            b"i17"           : b"0", # SRSFailed
+            b"i18"           : b"__DefaultLogin_Strings|1,__DefaultLogin_Core|1," # SRSSuccess
+        }).encode("ascii")
 
         # get Passport page
-        request = urllib2.Request(url, postFields, self.httpHeaders)
+        request = urllib.request.Request(url, postFields, self.httpHeaders)
         request.add_header("Referer", referer)
         with self.opener.open(request) as response:
             referer = response.geturl()
@@ -148,7 +152,7 @@ class BingAuth:
         helpers.errorOnText(page, "//account.live.com/tou/accrue", "Please log in (log out first if necessary) through a browser and accept the Terms Of Use")
 
         contSubmitUrl = self.formAction.search(page)
-        if contSubmitUrl == None:
+        if contSubmitUrl is None:
             raise AuthenticationError("Could not find form action for continue page")
         url = contSubmitUrl.group(1)
 
@@ -156,17 +160,17 @@ class BingAuth:
         formFields = self.inputNameValue.findall(page)
         postFields = {}
         for field in formFields:
-            postFields[field[0]] = field[1]
-        postFields = urllib.urlencode(postFields)
+            postFields[field[0].encode("ascii")] = field[1].encode("ascii")
+        postFields = urllib.parse.urlencode(postFields).encode("ascii")
 
         # submit continue page
-        request = urllib2.Request(url, postFields, self.httpHeaders)
+        request = urllib.request.Request(url, postFields, self.httpHeaders)
         request.add_header("Referer", referer)
         with self.opener.open(request) as response:
             referer = response.geturl()
             page = helpers.getResponseBody(response)
 
-        request = urllib2.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
+        request = urllib.request.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
         request.add_header("Referer", referer)
         with self.opener.open(request) as response:
             referer = response.geturl()

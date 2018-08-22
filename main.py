@@ -1,23 +1,26 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #
 # developed by Sergey Markelov (2013)
 #
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
-import HTMLParser
 import getopt
 import os
 import random
 import sys
 import time
-import urllib2
 import traceback
+import socket
 
-from socket import error as SocketError
-import errno
+from six.moves import urllib
 
+try:
+    from HTMLParser import HTMLParseError
+except ImportError:
+    class HTMLParseError(Exception):
+        pass
 
 file = os.path.realpath(__file__)
 sys.path.append(os.path.join(os.path.dirname(file), "pkg"))
@@ -63,9 +66,9 @@ def earnRewards(config, httpHeaders, userAgents, reportItem, password):
         results = bingRewards.process(rewards, verbose)
 
         if verbose:
-            print
-            print "-" * 80
-            print
+            print()
+            print("-" * 80)
+            print()
 
         bingRewards.printResults(results, verbose)
 
@@ -73,88 +76,69 @@ def earnRewards(config, httpHeaders, userAgents, reportItem, password):
         reportItem.lifetimeCredits = bingRewards.getLifetimeCredits()
         reportItem.pointsEarned = reportItem.newPoints - reportItem.oldPoints
         reportItem.pointsEarnedRetrying += reportItem.pointsEarned
-        print
-        print "%s - %s" % (reportItem.accountType, reportItem.accountLogin)
-        print
-        print "Points before:    %6d" % reportItem.oldPoints
-        print "Points after:     %6d" % reportItem.newPoints
-        print "Points earned:    %6d" % reportItem.pointsEarned
-        print "Lifetime Credits: %6d" % reportItem.lifetimeCredits
+        print()
+        print("%s - %s" % (reportItem.accountType, reportItem.accountLogin))
+        print()
+        print("Points before:    %6d" % reportItem.oldPoints)
+        print("Points after:     %6d" % reportItem.newPoints)
+        print("Points earned:    %6d" % reportItem.pointsEarned)
+        print("Lifetime Credits: %6d" % reportItem.lifetimeCredits)
 
-        print
-        print "-" * 80
+        print()
+        print("-" * 80)
 
         noException = True
 
-    except IOError, e:
+    except urllib.error.HTTPError as e:
         reportItem.error = e
-        print "IOError: %s" % e
+        if verbose:
+            traceback.print_exc()
+        print("The server couldn't fulfill the request.")
+        print("Error code: ", e.code)
 
-    except ValueError, e:
+    except urllib.error.URLError as e:
         reportItem.error = e
-        print "ValueError: %s" % e
+        if verbose:
+            traceback.print_exc()
+        print("Failed to reach the server.")
+        print("Reason: ", e.reason)
 
-    except AuthenticationError, e:
+    except (BingAccountError, AuthenticationError, HTMLParseError, socket.error, OSError, IOError, ValueError) as e:
         reportItem.error = e
-        print "AuthenticationError:\n%s" % e
-
-    except HTMLParser.HTMLParseError, e:
-        reportItem.error = e
-        print "HTMLParserError: %s" % e
-
-    except urllib2.HTTPError, e:
-        reportItem.error = e
-        print "The server couldn't fulfill the request."
-        print "Error code: ", e.code
-
-    except urllib2.URLError, e:
-        reportItem.error = e
-        print "Failed to reach the server."
-        print "Reason: ", e.reason
-
-    except SocketError as e:
-        if e.errno != errno.ECONNRESET:
-            raise
-
-        # see http://stackoverflow.com/a/20568874/2147244
-        # for explanation of the problem
-
-        reportItem.error = e
-        print "Connection reset by peer."
-
-    except BingAccountError as e:
-        reportItem.error = e
-        print "BingAccountError: %s" % e
+        if verbose:
+            traceback.print_exc()
+        else:
+            print(*traceback.format_exception_only(*sys.exc_info()[:2]))
 
     finally:
         if not noException:
-            print
-            print "For: %s - %s" % (reportItem.accountType, reportItem.accountLogin)
-            print
-            print "-" * 80
+            print()
+            print("For: %s - %s" % (reportItem.accountType, reportItem.accountLogin))
+            print()
+            print("-" * 80)
 
 def usage():
-    print "Usage:"
-    print "    -h, --help               show this help"
-    print
-    print "    -f, --configFile=file    use specific config file. Default is config.xml"
-    print
-    print "    -r, --full-report        force printing complete report at the end. Note: complete report will be"
-    print "                             printed anyway if more than one account was processed and cumulative"
-    print "                             points earned is more than zero"
-    print
-    print "    -v, --verbose            print verbose output"
-    print
-    print "        --version            print version info"
+    print("Usage:")
+    print("    -h, --help               show this help")
+    print()
+    print("    -f, --configFile=file    use specific config file. Default is config.xml")
+    print()
+    print("    -r, --full-report        force printing complete report at the end. Note: complete report will be")
+    print("                             printed anyway if more than one account was processed and cumulative")
+    print("                             points earned is more than zero")
+    print()
+    print("    -v, --verbose            print verbose output")
+    print()
+    print("        --version            print version info")
 
 def printVersion():
-    print "Bing Rewards Automation script: <http://sealemar.blogspot.com/2012/12/bing-rewards-automation.html>"
-    print "Version: " + SCRIPT_VERSION + " from " + SCRIPT_DATE
-    print "See 'version.txt' for the list of changes"
-    print "This code is published under LGPL v3 <http://www.gnu.org/licenses/lgpl-3.0.html>"
-    print "There is NO WARRANTY, to the extent permitted by law."
-    print
-    print "Developed by: Sergey Markelov"
+    print("Bing Rewards Automation script: <http://sealemar.blogspot.com/2012/12/bing-rewards-automation.html>")
+    print("Version: " + SCRIPT_VERSION + " from " + SCRIPT_DATE)
+    print("See 'version.txt' for the list of changes")
+    print("This code is published under LGPL v3 <http://www.gnu.org/licenses/lgpl-3.0.html>")
+    print("There is NO WARRANTY, to the extent permitted by law.")
+    print()
+    print("Developed by: Sergey Markelov")
 
 def __stringifyAccount(reportItem, strLen):
     if strLen < 4:
@@ -173,7 +157,7 @@ def __processAccount(config, httpHeaders, userAgents, reportItem, accountPasswor
         reportItem.retries += 1
 
         if reportItem.retries > 1:
-            print "retry #" + str(reportItem.retries)
+            print("retry #" + str(reportItem.retries))
 
         earnRewards(config, httpHeaders, userAgents, reportItem, accountPassword)
         totalPoints += reportItem.pointsEarned
@@ -185,7 +169,7 @@ def __processAccount(config, httpHeaders, userAgents, reportItem, accountPasswor
             time.sleep(extra)
         else:
             # TODO: implement as Utils.warn() or something
-            print "Unexpected result from eventsProcessor.processReportItem() = ( %s, %s )" % (result, extra)
+            print("Unexpected result from eventsProcessor.processReportItem() = ( %s, %s )" % (result, extra))
             break
 
 def __run(config):
@@ -193,9 +177,11 @@ def __run(config):
 
     doSleep = False
 
-    accounts = config.accounts.items()
-    random.shuffle(accounts)
-    for key, account in accounts:
+    accountKeys = list(config.accounts.keys())
+    random.shuffle(accountKeys)
+    for key in accountKeys:
+        account = config.accounts[key]
+
         if account.disabled:
             continue
 
@@ -225,32 +211,32 @@ def __run(config):
     #
 
     if showFullReport or totalPoints > 0 and len(report) > 1:
-        print
-        print "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= FINAL REPORT =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-        print
-        print "            Account           | Before | After  | Earned |  Lifetime  | Retries "
-        print "------------------------------+--------+--------+--------+------------+---------"
+        print()
+        print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= FINAL REPORT =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
+        print()
+        print("            Account           | Before | After  | Earned |  Lifetime  | Retries ")
+        print("------------------------------+--------+--------+--------+------------+---------")
 
         for r in report:
-            print " %-28s | %6d | %6d | %6d | %10d | %7d" % (__stringifyAccount(r, 28), r.oldPoints, r.newPoints, r.pointsEarnedRetrying, r.lifetimeCredits, r.retries)
+            print(" %-28s | %6d | %6d | %6d | %10d | %7d" % (__stringifyAccount(r, 28), r.oldPoints, r.newPoints, r.pointsEarnedRetrying, r.lifetimeCredits, r.retries))
 
-        print
+        print()
 
     #
     # print footer
     #
 
-    print "Total points earned: %d" % totalPoints
-    print
-    print "%s - script ended" % helpers.getLoggingTime()
+    print("Total points earned: %d" % totalPoints)
+    print()
+    print("%s - script ended" % helpers.getLoggingTime())
 
     EventsProcessor.onScriptComplete(config)
 
 if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hf:rv", ["help", "configFile=", "full-report", "verbose", "version"])
-    except getopt.GetoptError, e:
-        print "getopt.GetoptError: %s" % e
+    except getopt.GetoptError as e:
+        print("getopt.GetoptError: %s" % e)
         usage()
         sys.exit(1)
 
@@ -285,9 +271,9 @@ if __name__ == "__main__":
         if not os.path.isfile(configFile):
             configFile = os.path.join(os.getcwd(), configFileName)
 
-    print "%s - script started" % helpers.getLoggingTime()
-    print "-" * 80
-    print
+    print("%s - script started" % helpers.getLoggingTime())
+    print("-" * 80)
+    print()
 
     helpers.createResultsDir(__file__)
 
@@ -295,16 +281,22 @@ if __name__ == "__main__":
 
     try:
         config.parseFromFile(configFile)
-    except IOError, e:
-        print "IOError: %s" % e
+    except IOError as e:
+        print("IOError: %s" % e)
         sys.exit(2)
-    except ConfigError, e:
-        print "ConfigError: %s" % e
+    except ConfigError as e:
+        print("ConfigError: %s" % e)
         sys.exit(2)
 
     try:
         __run(config)
-    except BaseException, e:
+    except BaseException as e:
         if verbose:
             traceback.print_exc()
+        else:
+            print(*traceback.format_exception_only(*sys.exc_info()[:2]))
+
+        print("%s - script failed" % helpers.getLoggingTime())
+
         EventsProcessor.onScriptFailure(config, e)
+        sys.exit(1)

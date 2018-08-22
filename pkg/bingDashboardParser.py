@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 #
 # developed by Sergey Markelov (2013)
 #
@@ -15,9 +13,10 @@ Usage:
     parseDashboardPage(bingRewards.requestDashboardPage(), BING_URL)
 """
 
+from __future__ import division
+
 import re
 from datetime import datetime
-import sys
 
 class Reward:
     "A class to represent a Bing reward"
@@ -45,7 +44,7 @@ class Reward:
         SEARCH_AND_EARN_DESCR_RE = re.compile(r"[Uu]p to (\d+) points? (?:per day|today), (\d+) points? per search")
         SEARCH_AND_EARN_DESCR_RE_MOBILE = re.compile(r"(\d+) points per search on Microsoft Edge mobile app or (\d+) points per search on any other mobile browser, for up to (\d+) mobile searches per day")
         # need to change this to work for hits
-        EARN_CREDITS_RE = re.compile("Earn (\d+) credits?")
+        EARN_CREDITS_RE = re.compile(r"Earn (\d+) credits?")
 
 #       Alias                   Index Reward.name
 #                           optional(Reward.description)                         isRe?  Action
@@ -95,7 +94,7 @@ class Reward:
         if self.progressMax == 0:
             return 0
         else:
-            return (float(self.progressCurrent) / self.progressMax * 100)
+            return (self.progressCurrent / self.progressMax * 100)
 
 def parseDashboardPage(page, bing_url):
     """
@@ -106,9 +105,6 @@ def parseDashboardPage(page, bing_url):
     bing_url - url of bing main page - generally http://www.bing.com which will be
                 added to Reward.url as a prefix if appropriate
     """
-    reload(sys)
-    sys.setdefaultencoding('utf8')
-
     if page is None: raise TypeError("page is None")
     if page.strip() == "": raise ValueError("page is empty")
 
@@ -152,11 +148,11 @@ def checkForHit(currAction, rewardProgressCurrent, rewardProgressMax, searchLink
                 return [rewardProgressCurrent, rewardProgressMax]
 
 def createReward(reward, rUrl, rName, rPC, rPM, rDesc, hitId=None, hitHash=None):
-    reward.url = rUrl.strip().replace(' ','')
-    reward.name = rName.strip().encode('latin-1', 'ignore')
+    reward.url = rUrl
+    reward.name = rName
     reward.progressCurrent = rPC
     reward.progressMax = rPM
-    reward.description = rDesc.strip().encode('latin-1', 'ignore')
+    reward.description = rDesc
     if hitId:
         reward.hitId = hitId
     if hitHash:
@@ -196,46 +192,51 @@ def createRewardNewFormat(page, title, newRwd):
     hitHash = relevantSegment[relevantSegment.find('hash')+7:]
     hitHash = hitHash[:hitHash.find('","')]
     relevantSegment = relevantSegment[:relevantSegment.index("}")]
-    rewardName = cleanString(title)
+    rewardName = title.encode("raw_unicode_escape").decode("unicode_escape")
     # check relevant segment for 'slide_0', if exists switch to slide processing branch - ignoring for now since I'm not sure slides are rewards
     if relevantSegment.find("slide_") == -1:
         for attrPair in relevantSegment.split(',"'):
             current = attrPair.replace('"','').split(':')
-            attrType = current[0].strip().replace('"','')
+            if len(current) < 2:
+                continue
+
+            attrType = current[0].encode("raw_unicode_escape").decode("unicode_escape").strip()
+            attrValue = current[1].encode("raw_unicode_escape").decode("unicode_escape").strip()
+
             # usually just 'description' but some rewards use slide prefix ex: slide_1_description, slide_2_description. Might be better to use regex here
             if attrType == "description":
-                rewardDescription = cleanString(current[1])
+                rewardDescription = attrValue
             if attrType == "progress":
-                rewardProgressCurrent = int(cleanString(current[1]))
+                rewardProgressCurrent = int(attrValue)
             if attrType == "max":
-                rewardProgressMax = int(cleanString(current[1]))
+                rewardProgressMax = int(attrValue)
             if attrType == "destination":
                 # since we are splitting on colons the URL is getting split. Need to put it back together here
-                if len(current[1]) > 0:
-                    if current[1] == 'https' or current[1] == 'http':
-                        rewardURL = cleanString(current[1]+':'+current[2])
+                if len(attrValue) > 0:
+                    if attrValue == 'https' or attrValue == 'http':
+                        rewardURL = attrValue + ':' + current[2].encode("raw_unicode_escape").decode("unicode_escape")
                     else:
-                        rewardURL = cleanString(current[1])
+                        rewardURL = attrValue
             if attrType == "daily_set_date" != -1:
                 # if this reward is not for today (sneak peek rewards are tomorrow), we don't want it
-                if len(current[1]) > 0:
-                    attrDateObj = datetime.strptime(cleanString(current[1]), '%m/%d/%Y')
+                if len(attrValue) > 0:
+                    attrDateObj = datetime.strptime(attrValue, '%m/%d/%Y')
                     if not (attrDateObj.year == curDate.year and attrDateObj.month == curDate.month and attrDateObj.day == curDate.day):
                         isValid = False
             if attrType == "complete":
-                if current[1] == 'True':
+                if attrValue == 'True':
                     hasComplete = 1
-                if current[1] == 'False':
+                if attrValue == 'False':
                     hasComplete = 0
             if attrType == "offerid":
-                hitIdentifier = cleanString(current[1])
+                hitIdentifier = attrValue
 
             if rewardName == "Current day streak":
                 hasComplete = 1
                 if attrType == "activity_progress":
                     rewardDescription = rewardName
-                    rewardProgressCurrent = int(cleanString(current[1]))
-                    rewardProgressMax = int(cleanString(current[1]))
+                    rewardProgressCurrent = int(attrValue)
+                    rewardProgressMax = int(attrValue)
                     hitIdentifier = ""
 
     # if it isn't completable then it probably isn't a reward, so ignore it
@@ -245,5 +246,3 @@ def createRewardNewFormat(page, title, newRwd):
         createReward(newRwd, rewardURL, rewardName, rewardProgressCurrent, rewardProgressMax, rewardDescription, hitIdentifier, hitHash)
     return isValid
 
-def cleanString(strToClean):
-    return strToClean.replace("\u0027","'").replace("\u0026","&")

@@ -1,16 +1,18 @@
-#!/usr/bin/env python2
-
 #
 # developed by Sergey Markelov (2013)
 #
 
-import StringIO
+from __future__ import with_statement, division
+
 import zlib
 import gzip
 import os
 import errno
+import cgi
 from datetime import datetime
 import sys
+
+import six
 
 class BingAccountError(ValueError):
     def __init__(self, message):
@@ -29,7 +31,7 @@ def getXmlChildNodes(xmlNode):
 
 def getLoggingTime():
     dt = datetime.now()
-    dtStr = dt.strftime("%Y-%m-%d %H:%M:%S") + "." + str(dt.microsecond / 100000)
+    dtStr = dt.strftime("%Y-%m-%d %H:%M:%S") + "." + str(dt.microsecond // 100000)
     return dtStr
 
 def createResultsDir(f):
@@ -46,32 +48,49 @@ def createResultsDir(f):
     resultsDir = scriptDir + "/" + RESULTS_DIR
     try:
         os.makedirs(resultsDir, 0o755)
-    except OSError, e:
+    except OSError as e:
         if e.errno != errno.EEXIST:
             raise
     RESULTS_DIR = resultsDir
 
 
 def getResponseBody(response):
-    """ Returns response.read(), but does gzip deflate if appropriate"""
+    """Attempts to decode an HTTP response body to a unicode string.
 
-    encoding = response.info().get("Content-Encoding")
+    First, if necessary, the body will be decompressed according to the value of the Content-Encoding header.
+
+    Then, the data will be decoded according to the charset indicated in the Content-Type header. If Content-Type
+    is a text media type (text/*) but does not specify charset, ISO-8859-1 is assumed. Otherwise, no decoding is
+    attempted.
+
+    If decoding occured, the result is a unicode string (unicode in py2 or str in py3). Otherwise, the result of
+    response.read() (decompressed if required by Content-Encoding) is returned.
+    """
+    encoding = response.headers.get("Content-Encoding")
 
     if encoding in ("gzip", "x-gzip", "deflate"):
-        page = response.read()
+        compressedBody = response.read()
         if encoding == "deflate":
-            return zlib.decompress(page)
+            body = zlib.decompress(compressedBody)
         else:
-            fd = StringIO.StringIO(page)
+            fd = six.BytesIO(compressedBody)
             try:
-                data = gzip.GzipFile(fileobj = fd)
-                try:     content = data.read()
-                finally: data.close()
+                with gzip.GzipFile(fileobj=fd) as data:
+                    body = data.read()
             finally:
                 fd.close()
-            return content
     else:
-        return response.read()
+        body = response.read()
+
+    ctHeader = response.headers.get("Content-Type")
+    if ctHeader is not None:
+        ctValue, ctParams = cgi.parse_header(ctHeader)
+        if "charset" in ctParams:
+            body = body.decode(ctParams["charset"], errors="replace")
+        elif "text" in ctValue:
+            body = body.decode("ISO-8859-1", errors="replace")
+
+    return body
 
 def dumpErrorPage(page):
     """

@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 #
 # Bing queries generator
 # developed by Sergey Markelov (2013)
@@ -7,8 +5,10 @@
 
 import re
 import helpers
-import urllib2
-import bingFlyoutParser as bfp
+
+from six.moves import urllib
+
+import bingDashboardParser as bdp
 from bingRewards import BingRewards
 
 BING_NEWS_URL = "http://www.bing.com/news?q=world+news"
@@ -80,7 +80,7 @@ class queryGenerator:
         Returns True if self.numberOfQueries queries were generated in
         self.queries set
         """
-        if self.rewardType == bfp.Reward.Type.SEARCH_MOBILE:
+        if self.rewardType == bdp.Reward.Type.SEARCH_MOBILE:
             snippetMarkerBegin = '<p class="dgrey"'
             snippetMarkerEnd = '</p>'
         else:
@@ -141,18 +141,18 @@ class queryGenerator:
             raise ValueError("history is not set or not an instance of set")
         self.history = history
 
-        request = urllib2.Request(url = BING_NEWS_URL, headers = self.bingRewards.httpHeaders)
+        request = urllib.request.Request(url = BING_NEWS_URL, headers = self.bingRewards.httpHeaders)
         with self.bingRewards.opener.open(request) as response:
             newsPage = helpers.getResponseBody(response)
 
         if newsPage is None: raise TypeError("newsPage is None")
         if newsPage.strip() == "": raise ValueError("newsPage is empty")
 
-        self.rewardType = bfp.Reward.Type.SEARCH_PC
+        self.rewardType = bdp.Reward.Type.SEARCH_PC
         startMarker = '<div class="NewsResultSet'
         s = newsPage.find(startMarker)
         if s == -1:
-            self.rewardType = bfp.Reward.Type.SEARCH_MOBILE
+            self.rewardType = bdp.Reward.Type.SEARCH_MOBILE
             startMarker = '<div class="mpage'
             s = newsPage.index(startMarker)
 
@@ -160,7 +160,7 @@ class queryGenerator:
         s = newsPage.index(">", s)
         s += 1
 
-        if self.rewardType == bfp.Reward.Type.SEARCH_MOBILE:
+        if self.rewardType == bdp.Reward.Type.SEARCH_MOBILE:
             endMarker = '<div id="CntFtr"'
         else:
             endMarker = '<div class="RightRail"'

@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 #
 # Wikipedia queries generator
 # developed by Alex Mayer (2014)
@@ -7,9 +5,11 @@
 
 import re
 import helpers
-import urllib2
 from random import randint, shuffle
 from datetime import date
+
+from six.moves import urllib
+
 from bingRewards import BingRewards
 
 MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -66,7 +66,7 @@ class queryGenerator:
         if history is None or not isinstance(history, set):
             raise ValueError("history is not set or not an instance of set")
 
-        request = urllib2.Request(url = QUERY_URL, headers = self.bingRewards.httpHeaders)
+        request = urllib.request.Request(url = QUERY_URL, headers = self.bingRewards.httpHeaders)
         with self.bingRewards.opener.open(request) as response:
             page = helpers.getResponseBody(response)
 
@@ -128,11 +128,11 @@ class queryGenerator:
         queriesNeeded = queriesToGenerate
         # loop until we have enough queries or run out of things to search for
         while queriesNeeded > 0 and len(searchTerms) > 0:
-            ri = randint(0, len(searchTerms) - 1)
+            term = searchTerms[randint(0, len(searchTerms) - 1)]
             # add current term to queries
-            queries.add(searchTerms[ri])
+            queries.add(term)
             # remove each instance of current term from searchTerms
-            searchTerms = filter(lambda x: x != searchTerms[ri], searchTerms)
+            searchTerms = [x for x in searchTerms if x != term]
             queriesNeeded -= 1
 
         return queries

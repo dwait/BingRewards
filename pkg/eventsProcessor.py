@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 #
 # developed by Sergey Markelov (2013)
 #
@@ -111,18 +109,17 @@ class EventsProcessor:
         _exception_ is an exception derived from BaseException which caused the script to fail
 
         By the nature of this function, it won't fail if _exception_ is None or
-        is not of the class BaseException, but it's better to supply one
-        This function won't fail if _config_ is not supplied. In that case it will simply
-        reraise the exception
+        is not of the class BaseException, but it's better to supply one.
+        This function won't fail if _config_ is not supplied. In that case it will simply return.
 
         returns nothing
         """
-        if config is None: raise
-        if not isinstance(config, Config): raise
+        if config is None: return
+        if not isinstance(config, Config): return
 
         event = config.getEvent(Config.Event.onScriptFailure)
         if event is None:
-            raise
+            return
 
         description = str(exception) if exception else "No exception was supplied"
         description = "\"" + description.replace("\"", "") + "\""

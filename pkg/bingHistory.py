@@ -1,12 +1,14 @@
-#!/usr/bin/env python2
-
 #
 # developed by Sergey Markelov (2013)
 #
 
+from __future__ import print_function
+
 from datetime import datetime
-from HTMLParser import HTMLParser
-import helpers
+
+from six.moves import html_parser
+
+#import helpers
 
 def __parseResultsArea1(resultsArea):
     """
@@ -17,7 +19,7 @@ def __parseResultsArea1(resultsArea):
     startMarkerLen = len(startMarker)
 
     history = []
-    htmlParser = HTMLParser()
+    htmlParser = html_parser.HTMLParser()
 
     s = 0
     while True:
@@ -55,7 +57,7 @@ def __parseResultsArea2(resultsArea):
     startMarkerLen = len(startMarker)
 
     history = []
-    htmlParser = HTMLParser()
+    htmlParser = html_parser.HTMLParser()
 
     s = 0
     while True:
@@ -80,10 +82,10 @@ def parse(page):
     """
     if page is None: raise TypeError("page is None")
     if page.strip() == "":
-        print "-------------------------------"
-        print "Warning: Bing history is empty"
-        print "-------------------------------"
-        print
+        print("-------------------------------")
+        print("Warning: Bing history is empty")
+        print("-------------------------------")
+        print()
         return set()
 
     (isIt, s, e) = __isApproach(page, '<div id="results_area">', '<div id="sidebar">')

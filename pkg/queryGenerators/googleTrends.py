@@ -1,5 +1,3 @@
-#!/usr/bin/python2
-
 #
 # Google Trends queries generator
 # Developed by Sangdrax (2014)
@@ -9,10 +7,10 @@
 # with a search syntax.  These terms are anything trending
 # and can be NSFW or terms for illegal items.
 
-import urllib2
 import random
 from xml.etree import ElementTree
-from urllib import quote_plus
+
+from six.moves import urllib
 
 TRENDSURL = "http://www.google.com/trends/hottrends/atom/feed?pn=p1"
 SUGGESTURL = "http://suggestqueries.google.com/complete/search?output=toolbar&hl=en&q="
@@ -34,12 +32,13 @@ class queryGenerator:
         return result.copy()
 
     def __readXML(self,URL):
-        response = urllib2.urlopen(URL)
+        response = urllib.request.urlopen(URL)
         try:
-            tree = ElementTree.parse(response)
+            return ElementTree.parse(response)
         except:
             return None
-        return tree
+        finally:
+            response.close()
 
     def __trendQueries(self):
         generated = set()
@@ -53,13 +52,13 @@ class queryGenerator:
             if desc:
                 subDesc = desc.split(',')
                 subDesc = subDesc if len(subDesc) <= 10 else random.sample(subDesc, 10)
-                for item in subDesc:
-                    generated.add(item.strip().lower())
+                for sitem in subDesc:
+                    generated.add(sitem.strip().lower())
         return generated
 
     def __suggestQueriesSingle(self,term):
         suggestions = set()
-        formatted = quote_plus(term.encode('utf-8')) #term.replace(" ","+").encode('ascii', 'ignore')
+        formatted = urllib.parse.quote_plus(term.encode('utf-8')) #term.replace(" ","+").encode('ascii', 'ignore')
         URL = SUGGESTURL+formatted
         tree = self.__readXML(URL)
         if tree is not None:
