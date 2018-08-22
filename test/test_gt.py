@@ -10,7 +10,7 @@ from googleTrends import queryGenerator
 
 if __name__ == '__main__':
     G = queryGenerator("nothing")
-    T = queryGenerator("nothign2")
+    T = queryGenerator("nothing2")
     history = set("nothing")
     #print "all queries len:", len(G.allQueries)
     #print "unused queries len:", len(G.unusedQueries)

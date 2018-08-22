@@ -17,7 +17,7 @@ QUERY_URL = "https://en.wikipedia.org/wiki/{0}_{1}?action=raw".format(MONTH_NAME
 WIKIPEDIA_SECTION_PATTERN = re.compile(r'==([^\n]+)==\n(.+?)\n\n', re.S)
 WIKIPEDIA_LINK_PATTERN = re.compile(r'\[\[(?:[^|\]]*\|)?([a-zA-Z\s]+?)\]\]')
 """
-higher weight = higher priority(relativly)
+higher weight = higher priority(relatively)
 assuming "events" weight is 4 and "births" weight is 1:
 if "events" section has 20 links and "births" section has 20 links
 "events" section will be favored 4 to 1

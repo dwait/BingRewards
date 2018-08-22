@@ -40,10 +40,10 @@ class BingRewardsReportItem(AccountKey):
         self.lifetimeCredits = 0
         self.retries         = 0
         self.notify          = None         # a reference to an instance of Config.Event.Notify which caused this notification
-        self.error           = None         # will be populated with excpetion if it happens
+        self.error           = None         # will be populated with exception if it happens
 
 class Config:
-    "Data model of config.xml"
+    """Data model of config.xml"""
 
     class General:
         def __init__(self):
@@ -70,7 +70,7 @@ class Config:
             self.password = None                  # meaning that the proxy doesn't require auth
 
     class Account(AccountKey):
-        "Data model representing config.xml account"
+        """Data model representing config.xml account"""
 
         def __init__(self):
             AccountKey.__init__(self)
@@ -81,7 +81,7 @@ class Config:
             return self.__dict__ == other.__dict__
 
     class Event:
-        "Data model representing config.xml event"
+        """"Data model representing config.xml event"""
 
         onError          = "onError"
         onComplete       = "onComplete"
@@ -89,7 +89,7 @@ class Config:
         onScriptFailure  = "onScriptFailure"
 
         class Specifier:
-            "see _Format Specifiers_"
+            """see _Format Specifiers_"""
             IF           = 0x1
             CMD          = 0x2
             CMD_ON_ERROR = 0x4 | CMD
@@ -144,7 +144,7 @@ class Config:
                 return func(bingRewardsReportItem)
 
         class IfStatement:
-            "See config.xml - Section EVENTS.{RETRY|NOTIFY}.IF"
+            """See config.xml - Section EVENTS.{RETRY|NOTIFY}.IF"""
 
             #
             # see EVENTS.{RETRY|NOTIFY}.IF::Comparison Operators
@@ -250,19 +250,19 @@ class Config:
 
         return event
 
-# is called from self.__parseEvent
+    # is called from self.__parseEvent
     def __parseEvent_onError(self, xmlEventNode, event):
         return self.__parseOnErrorOnComplete(xmlEventNode, event, "onError")
 
-# is called from self.__parseEvent
+    # is called from self.__parseEvent
     def __parseEvent_onComplete(self, xmlEventNode, event):
         return self.__parseOnErrorOnComplete(xmlEventNode, event, "onComplete")
 
-# is called from self.__parseEvent
+    # is called from self.__parseEvent
     def __parseEvent_onScriptComplete(self, xmlEventNode, event):
         return self.__parseEvent_onScriptFailure_onScriptComplete(xmlEventNode, event, Config.Event.onScriptComplete)
 
-# is called from self.__parseEvent
+    # is called from self.__parseEvent
     def __parseEvent_onScriptFailure(self, xmlEventNode, event):
         return self.__parseEvent_onScriptFailure_onScriptComplete(xmlEventNode, event, Config.Event.onScriptFailure)
 
@@ -307,7 +307,7 @@ class Config:
         try:
             retry.interval = float(val)
         except ValueError:
-            raise ConfigError("EVENTS.RETRY.interval must be (dobule): " + val)
+            raise ConfigError("EVENTS.RETRY.interval must be (double): " + val)
         if retry.interval < 0:
             raise ConfigError("EVENTS.RETRY.interval MUST BE >= 0")
 
@@ -356,7 +356,7 @@ class Config:
     def __parseIfStatement(self, strIfStatement):
         """
         Validates _strIfStatement_
-        returns an istance of Config.Event.IfStatement
+        returns an instance of Config.Event.IfStatement
         raises ConfigError
         """
 
@@ -459,7 +459,7 @@ class Config:
 
         if p.login or p.password:
             if not p.login or not p.password:
-                raise ConfigError("Both proxy login and proxy password should be either set or uset at the same time")
+                raise ConfigError("Both proxy login and proxy password should be either set or unset at the same time")
 
         self.proxy = p
 
@@ -522,7 +522,7 @@ class Config:
     def parseFromString(self, xmlString):
         """
         Parses a configuration from _xmlString_
-        _xmlStrign_ - an xml string like config.xml
+        _xmlString_ - an xml string like config.xml
         raises ConfigError if _xmlString_ is not correct
         raises ValueError if _xmlString_ is None
         """

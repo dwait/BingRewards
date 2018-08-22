@@ -26,7 +26,7 @@ class queryGenerator:
 
     def __addQueriesFromString(self, inputString):
         """
-        Adds all possible query compbinations which can be constructed from
+        Adds all possible query combinations which can be constructed from
         inputString to self.queries
 
         Returns False if len(self.queries) >= self.numberOfQueries
@@ -41,7 +41,7 @@ class queryGenerator:
             if len(self.queries) >= self.numberOfQueries:
                 return False
             e -= 1
-# rstrip()
+            # rstrip()
             while(inputString[e-1:e] in " \u200b"): e -= 1
 
         return True
@@ -49,7 +49,7 @@ class queryGenerator:
     def __splitAndAdd(self, inputString, maxQueryLen):
         """
         Splits inputString into smaller parts each of around maxQueryLen in length
-        and calls __addQueriesFromString on each of the smaller parst
+        and calls __addQueriesFromString on each of the smaller parts
 
         Returns False if len(self.queries) >= self.numberOfQueries
         meaning no more adding is necessary
@@ -102,10 +102,10 @@ class queryGenerator:
             s += 1
             e = newsResultSet.index(snippetMarkerEnd, s)
 
-# don't include the last "..." charecter
+            # don't include the last "..." character
             e -= 1
 
-# get rid of unrelated stuff
+            # get rid of unrelated stuff
             inputString, numberOfSubsMade = htmlEntities.subn("", newsResultSet[s:e])
             inputString, numberOfSubsMade = trashChars.subn("", inputString)
             inputString = inputString.strip().replace("  ", " ")
@@ -120,8 +120,8 @@ class queryGenerator:
     def generateQueries(self, queriesToGenerate, history, maxQueryLen = MAX_QUERY_LEN):
         """
         parses Bing news page and generates a set of unique queries to run on Bing
-        A query is considered to be unique if it distingueshes from any other query at
-        least in a meaning letter. Where meaning letter is any ASCII charecter, but
+        A query is considered to be unique if it distinguishes from any other query at
+        least in a meaning letter. Where meaning letter is any ASCII character, but
         terminators (space, comma, colon, etc.)
 
         Url good enough to get Bing news

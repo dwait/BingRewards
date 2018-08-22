@@ -5,7 +5,8 @@
 import random
 
 BING_URL = 'http://www.bing.com'
-#When links are hit from dashboard, need to use the account URL, not bing URL. Not overwriting because it could be used in other places
+# When links are hit from dashboard, need to use the account URL, not bing URL.
+# Not overwriting because it could be used in other places.
 ACCOUNT_URL = 'https://account.microsoft.com'
 
 # common headers for all requests
@@ -60,7 +61,7 @@ USER_AGENTS_MOBILE = (
     "Mozilla/5.0 (Linux; Android 6.0.1; LGLS992 Build/MMB29M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Mobile Safari/537.36",
     # Chrome Android 6.0.1 (Samsung S6 Edge)
     "Mozilla/5.0 (Linux; Android 6.0.1; SM-G925V Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.89 Mobile Safari/537.36",
-    # Chrome Andorid 6.0 (Motorola Droid Turbo 2)
+    # Chrome Android 6.0 (Motorola Droid Turbo 2)
     "Mozilla/5.0 (Linux; Android 6.0; XT1585 Build/MCK24.78-13.12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Mobile Safari/537.36",
     # Chrome Android 5.0 (Galaxy S5)
     "Mozilla/5.0 (Linux; Android 6.0.1; SM-G900V Build/MMB29M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Mobile Safari/537.36",

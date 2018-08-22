@@ -62,7 +62,7 @@ You can have as many account tags as you need.
 - **wikipedia**: Uses today's wikipedia. Generates terms with whole words.
 
 ### Events
-onError: Defines what the script should do when an error occurs durring processing an account.  
+onError: Defines what the script should do when an error occurs during processing an account.  
 onComplete: Defines how the script should behave when it completes processing an account.  
 onScriptComplete: A special event which occurs only once when the script finishes executing.  
 onScriptFailure: A special event which occurs only once and if the script fails with exception some time after successfully loading the config.

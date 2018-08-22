@@ -50,7 +50,7 @@ class EventsProcessor:
             val = Config.Event.Specifier.evaluate(specifier, self.reportItem)
             command = command.replace(specifier, '"' + str(val) + '"')
 
-# TODO: check return code from subprocess.call() ?
+        # TODO: check return code from subprocess.call() ?
         subprocess.call(command, shell = True)
 
     def __processEventOnReportItem(self, eventType):

@@ -5,7 +5,7 @@
 # Developed by Sangdrax (2014)
 #
 
-# This generatoer generates whole words, generally consistent 
+# This generator generates whole words, generally consistent
 # with a search syntax.  These terms are anything trending
 # and can be NSFW or terms for illegal items.
 
@@ -32,7 +32,7 @@ class queryGenerator:
             suggestSet = self.__suggestQueriesSingle(term)
             result.update(suggestSet)
         return result.copy()
-    
+
     def __readXML(self,URL):
         response = urllib2.urlopen(URL)
         try:
@@ -62,7 +62,7 @@ class queryGenerator:
         formatted = quote_plus(term.encode('utf-8')) #term.replace(" ","+").encode('ascii', 'ignore')
         URL = SUGGESTURL+formatted
         tree = self.__readXML(URL)
-        if tree is not None: 
+        if tree is not None:
             for item in tree.iter("suggestion"):
                 suggestions.add(item.get('data').lower())
         return suggestions

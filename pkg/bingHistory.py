@@ -24,7 +24,7 @@ def __parseResultsArea1(resultsArea):
         s = resultsArea.find(startMarker, s)
         if s == -1: break
 
-# locate a query
+        # locate a query
         s += startMarkerLen
         s = resultsArea.index("<a ", s)
         s += 3
@@ -32,7 +32,7 @@ def __parseResultsArea1(resultsArea):
         s += 1
         e = resultsArea.index("</a>", s)
 
-# resultsArea[s:e] now contains a query from history
+        # resultsArea[s:e] now contains a query from history
         history.append(htmlParser.unescape(resultsArea[s:e]).strip())
 
         s = e + 4
@@ -62,11 +62,11 @@ def __parseResultsArea2(resultsArea):
         s = resultsArea.find(startMarker, s)
         if s == -1: break
 
-# locate a query
+        # locate a query
         s += startMarkerLen
         e = resultsArea.index("</span>", s)
 
-# resultsArea[s:e] now contains a query from history
+        # resultsArea[s:e] now contains a query from history
         history.append(htmlParser.unescape(resultsArea[s:e]).strip())
 
         s = e + 7

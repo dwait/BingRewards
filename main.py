@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     configFile = ""
     configFileName = None
-  
+
     showFullReport = False
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -275,11 +275,11 @@ if __name__ == "__main__":
         else:
             raise NotImplementedError("option '" + o + "' is not implemented")
 
-    #if no config file was specified as an option use the default 
-    if configFileName is None : 
+    # if no config file was specified as an option use the default
+    if configFileName is None:
         configFileName = "config.xml"
-    
-    #if the file doesn't exist, look for it relative to the working and current dirs
+
+    # if the file doesn't exist, look for it relative to the working and current dirs
     if not os.path.isfile(configFile):
         configFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), configFileName)
         if not os.path.isfile(configFile):
