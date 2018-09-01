@@ -19,6 +19,8 @@ import re
 from datetime import datetime
 import sys
 
+import helpers
+
 class Reward:
     "A class to represent a Bing reward"
 
@@ -60,7 +62,7 @@ class Reward:
         REFER_A_FRIEND       = (7,    "Refer-A-Friend",                    None, False, Action.PASS)
         SEND_A_TWEET         = (8,    "Send a Tweet",                      None, False, Action.PASS)
         RE_EARNED_CREDITS    = (9,    re.compile("Earned \d+ credits?"),   None, True,  Action.PASS)
-        COMPLETED            = (10,    "Completed",                        None, False, Action.PASS)
+        COMPLETED            = (10,   "Completed",                         None, False, Action.PASS)
         SILVER_STATUS        = (11,   "Silver Status",                     None, False, Action.PASS)
         INVITE_FRIENDS       = (12,   "Invite friends",                    None, False, Action.PASS)
         EARN_MORE_POINTS     = (13,   "Earn more points",                  None, False, Action.INFORM)
@@ -68,10 +70,15 @@ class Reward:
         THURSDAY_BONUS       = (15,   "Thursday bonus",                    None, False, Action.PASS)
         RE_QUIZ              = (16,   re.compile(r"\b[Qq]uiz\b"),          None, True,  Action.PASS)
         SHOP_AND_EARN        = (17,   "Shop & earn",                       None, False, Action.INFORM)
+        EDGE_BONUS           = (18,   "Microsoft Edge bonus",              None, False, Action.PASS)
+        STREAK               = (19,   "Current day streak",                None, False, Action.INFORM)
+        DAILY_POLL           = (20,   "Daily Poll",                        None, False, Action.PASS)
+        NEWS_QUIZ            = (21,   "Test your smarts",                  None, False, Action.PASS)
 
         ALL = (RE_EARN_CREDITS_PASS, RE_EARN_CREDITS, SEARCH_MOBILE, SEARCH_PC, YOUR_GOAL, MAINTAIN_GOLD,
                REFER_A_FRIEND, SEND_A_TWEET, RE_EARNED_CREDITS, COMPLETED, SILVER_STATUS, INVITE_FRIENDS,
-               EARN_MORE_POINTS, SEARCH_AND_EARN, THURSDAY_BONUS, RE_QUIZ, SHOP_AND_EARN)
+               EARN_MORE_POINTS, SEARCH_AND_EARN, THURSDAY_BONUS, RE_QUIZ, SHOP_AND_EARN, EDGE_BONUS,
+               STREAK, DAILY_POLL, NEWS_QUIZ)
 
     def __init__(self):
         self.url = ""               # optional
@@ -132,24 +139,11 @@ def parseDashboardPage(page, bing_url):
                     validRwd = createRewardNewFormat(page, currentTitle, newRwd)
                     if validRwd:
                        allRewards.append(newRwd)
-    #else:
+    else:
         #unrecognized dashboard
+        raise helpers.BingAccountError("Unrecognized dashboard page")
 
     return allRewards
-
-def checkForHit(currAction, rewardProgressCurrent, rewardProgressMax, searchLink):
-    if currAction is not None:
-        if rewardProgressCurrent == 0 and rewardProgressMax == 0:
-            if currAction.get_text().lower().find('points') != -1:
-                try: 
-                    rewardProgressMax = int(currAction.get_text().split(' ')[0])
-                except ValueError:
-                    pass
-                #Use the button div to determine whether the offer has been completed
-                btn = searchLink.find('div', class_='card-button-height text-caption text-align-center offer-complete-card-button-background border-width-2 offer-card-button-background')
-                if btn is not None:
-                    rewardProgressCurrent = rewardProgressMax
-                return [rewardProgressCurrent, rewardProgressMax]
 
 def createReward(reward, rUrl, rName, rPC, rPM, rDesc, hitId=None, hitHash=None):
     reward.url = rUrl.strip().replace(' ','')
@@ -176,10 +170,14 @@ def createReward(reward, rUrl, rName, rPC, rPM, rDesc, hitId=None, hitHash=None)
                       or t[Reward.Type.Col.DESCRIPTION] == reward.description ):
                             reward.tp = t
 
-    #for 'HIT' rewards (10 points) we assume 10 points, higher values won't be triggered
-    #To determine whether a hit is already complete, there is logic above to check which div the button uses + the comparison below
-    if reward.progressMax == 10 and reward.progressCurrent != 10:
-        reward.tp = Reward.Type.RE_EARN_CREDITS 
+    # Final attempt to classify rewards not explicitly defined in the Reward class above
+    if reward.tp is None:
+        # One-off quizzes
+        if "quiz" in reward.description.lower():
+            reward.tp = Reward.Type.RE_QUIZ
+        # Generic 10-point reward
+        elif reward.progressMax == 10 and reward.progressCurrent != 10:
+            reward.tp = Reward.Type.RE_EARN_CREDITS
 
 def createRewardNewFormat(page, title, newRwd):
     curDate = datetime.now()
@@ -238,8 +236,10 @@ def createRewardNewFormat(page, title, newRwd):
                     rewardProgressMax = int(cleanString(current[1]))
                     hitIdentifier = ""
 
-    #if it isn't completeable then it probably isn't a reward, so ignore it
-    if hasComplete == -1:
+    # If it isn't completable then it probably isn't a reward, so ignore it. Also ignore rewards which are completable
+    # but offer no points (usually sweepstakes or store promotions), since they earn nothing and some of them fail to
+    # complete even when using the actual dashboard.
+    if hasComplete == -1 or (rewardProgressMax == 0 and rewardName != "Current day streak"):
         isValid = False
     if isValid:
         createReward(newRwd, rewardURL, rewardName, rewardProgressCurrent, rewardProgressMax, rewardDescription, hitIdentifier, hitHash)
